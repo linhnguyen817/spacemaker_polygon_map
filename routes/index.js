@@ -16,8 +16,10 @@ mongoose.connect('mongodb://localhost/polygondb', { useNewUrlParser: true }, fun
 // Mongoose Schema definition
 var Schema = mongoose.Schema;
 var JsonSchema = new Schema({
-    name: String,
-    type: Schema.Types.Mixed
+    type: Schema.Types.Mixed,
+    properties: Schema.Types.Mixed,
+    geometry: Schema.Types.Mixed,
+    isVisible: Schema.Types.Mixed
 });
  
 // Mongoose Model definition
@@ -40,7 +42,7 @@ router.get('/mapjson', function (req, res) {
 // POST new feature json to database
 router.post('/addFeature', function (req, res) {
     var feature = new json(req.body);
-    console.log(feature);
+    console.log(req.body);
 
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
@@ -49,6 +51,8 @@ router.post('/addFeature', function (req, res) {
 
         // add isVisible field for this feature
         feature["isVisible"] = true;
+
+        
 
         // insert feature to collection
         dbo.collection("polygons").insertOne(feature, function(err, res) {
@@ -59,12 +63,21 @@ router.post('/addFeature', function (req, res) {
     });
 });
 
-/* GET layers json data. */
-// router.get('/maplayers', function (req, res) {
-//     Json.find({},{'name': 1}, function (err, docs) {
-//         res.json(docs);
-//     });
-// });
+// POST change in visibility for a given feature in database
+router.post('/hideFeature', function (req, res) {
+    var featureGeom = req.body.geometry;
+    json.findOneAndUpdate(
+        {geometry: featureGeom},
+        {isVisible: false},
+        function (err, doc) {
+            if (err) return handleError(err);
+            console.log("Visibility for feature with geometry " + featureGeom + " successfully set to false");
+        }
+    )
+
+    json
+});
+
 
 /* GET Map page. */
 router.get('/map', function(req,res) {

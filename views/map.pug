@@ -131,15 +131,33 @@ block content
                     poly2 = selectedFeatures[i];
                     poly1 = turf.union(poly1, poly2);
                 }
+                //- add union polygon to database
                 addFeatureToDatabase(poly1);
-                //- addFeatureToMap(poly1.geometry, "unioned");
+
+                //- hide original polygons (but keep them in database)
+                //- selectedFeatures.forEach(function(feature) {
+                //-     hideFeatureInDatabase(feature);
+                //- });
+
+                //- unselect all selected polygons from union
+                selectedFeatures = [];
             }
         }
 
         function addFeatureToDatabase(feature) {
-            // make POST request to express
+            //- make POST request to express
             $.ajax({
                 url: '/addFeature', 
+                type: 'POST', 
+                contentType: 'application/json', 
+                data: JSON.stringify(feature)}
+            );
+        }
+
+        function hideFeatureInDatabase(feature) {
+            //- make POST request to express
+            $.ajax({
+                url: '/hideFeature', 
                 type: 'POST', 
                 contentType: 'application/json', 
                 data: JSON.stringify(feature)}
