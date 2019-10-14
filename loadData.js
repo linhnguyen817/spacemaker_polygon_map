@@ -2,8 +2,8 @@ var fs = require('fs');
 var MongoClient = require('mongodb').MongoClient;
 var GJV = require("geojson-validation");
 var url = "mongodb://localhost:27017/polygondb?authSource=admin";
-const geoJSONFile = "data/ex1.geojson";
-
+const geoJSONFile = process.argv.slice(2).toString();
+console.log(geoJSONFile);
 // load GeoJSON input data
 var data;
 try {
