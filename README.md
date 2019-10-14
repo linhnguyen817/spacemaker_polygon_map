@@ -1,7 +1,8 @@
 # spacemaker_polygon_map
-####A Leaflet map with Node.js and MongoDB supporting polygon unions and intersections
+#### Description:
+A Leaflet map with Node.js and MongoDB with polygon union and intersection operations
 
-#####To Run:
+##### To Run:
 1. Install dependencies:
     $ npm install
 
