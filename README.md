@@ -4,23 +4,24 @@ A Leaflet map with Node.js and MongoDB with polygon union and intersection opera
 
 ### To Run:
 1. Install dependencies:  
-    $ npm install
+    `$ npm install`
 
 2. Setup a local MonogoDB database
-  1. Install MongoDB (https://docs.mongodb.com/manual/installation/)  
-  2. Start the `mongo` shell in a terminal window  
-  3. Create a database named `polygondb`  
-    `> use polygondb`  
-  4. Create a collection named `polygons` within your new `polygondb` database  
-    `> db.polygons.insert()`  
-  5. In a different terminal window in the project directory, load the GeoJSON data file contents into your `polygons` collection  
-    ` $ node loadData.js data/ex1.geojson`
+    1. Install MongoDB (https://docs.mongodb.com/manual/installation/)  
+    2. Start the `mongo` shell in a terminal window  
+    3. Create a database named `polygondb`  
+        `> use polygondb`  
+    4. Create a collection named `polygons` within your new `polygondb` database  
+        `> db.polygons.insert()`  
+    5. In a different terminal window in the project directory, load the GeoJSON data file contents into your `polygons` collection  
+        `$ node loadData.js data/ex1.geojson`
 
 3. Run the app:  
-    $ DEBUG=polygon-map:* npm start
+    `$ DEBUG=polygon-map:* npm start`
 
-4. Display application in browser by going to:  
-    http://localhost:3000/map
+4. Display application in browser at http://localhost:3000/map
+
+
 
 **Things I would have done if given more time:**  
 - Use a dynamic starting center point for map
