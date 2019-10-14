@@ -1,5 +1,7 @@
 var express = require('express');
 var router = express.Router();
+var MongoClient = require('mongodb').MongoClient;
+var url = "mongodb://localhost:27017/polygondb?authSource=admin";
 
 // Mongoose import
 var mongoose = require('mongoose');
@@ -37,9 +39,23 @@ router.get('/mapjson', function (req, res) {
 
 // POST new feature json to database
 router.post('/addFeature', function (req, res) {
-    var newFeature = new json(req.params);
-    newFeature.save(function (err) {
-        if (err) return handleError(err);
+    var feature = new json(req.body);
+    console.log(feature);
+
+    MongoClient.connect(url, function(err, db) {
+        if (err) throw err;
+    
+        var dbo = db.db("polygondb");
+
+        // add isVisible field for this feature
+        feature["isVisible"] = true;
+
+        // insert feature to collection
+        dbo.collection("polygons").insertOne(feature, function(err, res) {
+            if (err) throw err;
+            console.log("Feature successfully added");
+            db.close();
+        });
     });
 });
 
