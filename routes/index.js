@@ -52,7 +52,7 @@ router.get('/map', function(req,res) {
         // lng : docs[0]['geometry']['coordinates'][0][0][0],
         // lat : docs[0]['geometry']['coordinates'][0][0][1]
         lat : 51.49698840879303,
-        lng : -0.1352691650390625
+        lng : -0.14007568359375
       });
     });
   }); 

@@ -2,14 +2,42 @@ extends layout.pug
 block content
     #map
     #leg_title 
-        span#leg_items Map Legend
+        span#leg_items Controls
     #leg
-        each layer, i in jmap
-            input(id=layer.name)(type='checkbox', checked)
-            span#leg_items #{layer.name}
+        each polygon, i in jmap
+            input(id=polygon._id)(type='checkbox', checked)
+            span#leg_items #{polygon._id}
             br
 
     script(type='text/javascript').
+        var stylelayer = {
+            original: {
+                color: "red",
+                opacity: 1,
+                fillcolor: "red",
+                fillOpacity: 0.1,
+                weight: 0.5
+            },
+            reset: {
+                color: "red",
+                opacity: 0.4,
+                weight: 1
+            },
+            highlight: {
+                weight: 5,
+                color: '#0D8BE7',
+                dashArray: '',
+                fillOpacity: 0.7
+            },
+            selected: {
+                color: "blue",
+                opacity: 0.3,
+                weight: 0.5
+            }
+        };
+
+        var featuresSelected = [];
+
         var map = L.map('map').setView([#{lat},#{lng}], 14);
         L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -24,32 +52,57 @@ block content
              });
         });
         
-
         function addPolygon(inputPolygon, name) {
             var polygon;
             if (inputPolygon.type == "Polygon")  {
                 polygon = L.geoJson(inputPolygon, {
-                    style: {color: "#ff0000"}
-
-                    //- add id popup next for each polygon
-                    //- onEachFeature: function (feature, layer) {
-                    //-     inputPolygon.bindPopup(feature._id);
-                    //- }
+                    style: stylelayer.original,
+                    onEachFeature: onEachFeature //- add area highlight feature with mouse hover
                 });
             }
-            console.log(polygon);
             polygon.addTo(map);
-            
-            //- allow toggling of this layer
-            //- $('#' + name).click(function(e) {
-                
-            //-     if (map.hasLayer(polygon)) {
-            //-         map.removeLayer(polygon);
-            //-     } else {
-            //-         map.addLayer(polygon);
-            //-     }
-            //- });
         }
+
+        function onEachFeature(feature, layer) {
+            layer.on({
+                mouseover: highlightFeature,
+                mouseout: resetHighlight
+                click : selectFeature
+            });
+        }
+
+        function highlightFeature(e) {
+            var layer = e.target;
+            layer.setStyle(stylelayer.highlight);
+        }
+
+
+        function resetHighlight(e) {
+            var layer = e.target;
+            var feature = e.target.feature;
+            if (checkExistsLayers(feature)) {
+                setStyleLayer(layer, stylelayer.highlight)
+            } 
+            else {
+                setStyleLayer(layer, stylelayer.original)
+            }
+        }
+
+        function checkExistsLayers(feature) {
+            var result = false
+            for (var i = 0; i < featuresSelected.length; i++) {
+                if (featuresSelected[i]._id == feature._id) {
+                    result = true;
+                    break;
+                }
+            };
+            return result
+        }
+
+        function setStyleLayer(layer, styleSelected) {
+            layer.setStyle(styleSelected)
+        }
+
         //- $.getJSON('/maplayers',function(result){
         //-     $.each(result, function(i, mlayer){
         //-         $.getJSON('/mapjson/' + mlayer.name, function(data) { addLayer(data, mlayer.name ) });
