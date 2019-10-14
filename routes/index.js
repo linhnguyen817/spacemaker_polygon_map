@@ -7,29 +7,42 @@ var url = "mongodb://localhost:27017/polygondb?authSource=admin";
 const geoJSONFile = "data/ex1.geojson";
 
 
-// Mongoose connection to MongoDB
+// mongoose connection to MongoDB
 mongoose.connect('mongodb://localhost/polygondb', { useNewUrlParser: true }, function (error) {
     if (error) {
         console.log(error);
     }
 });
 
-// Mongoose Schema definition
+// mongoose Schema definition
 var Schema = mongoose.Schema;
-var JsonSchema = new Schema({
+var jsonSchema = new Schema({
     type: Schema.Types.Mixed,
     properties: Schema.Types.Mixed,
     geometry: Schema.Types.Mixed,
     isVisible: Schema.Types.Mixed
 });
  
-// Mongoose Model definition
-var json = mongoose.model('JString', JsonSchema, 'polygons');
+// mongoose Model definition
+var json = mongoose.model('JString', jsonSchema, 'polygons');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
+
+/* GET map page. */
+router.get('/map', function(req,res) {
+    json.find({},{}, function(err, docs){
+      if (err) return handleError(err);
+  
+      res.render('map', {
+        "jmap" : docs,
+        lat : 51.49698840879303,
+        lng : -0.14007568359375
+      });
+    });
+  }); 
 
 // GET json data of features that are visible 
 router.get('/mapjson', function (req, res) {
@@ -40,7 +53,7 @@ router.get('/mapjson', function (req, res) {
     })
   });
 
-// POST new feature json to database
+// POST new feature to database
 router.post('/addFeature', function (req, res) {
     var feature = new json(req.body);
     console.log(req.body);
@@ -74,22 +87,6 @@ router.post('/hideFeature', function (req, res) {
         }
     )
 });
-
-
-/* GET Map page. */
-router.get('/map', function(req,res) {
-    json.find({},{}, function(err, docs){
-      if (err) return handleError(err);
-  
-      res.render('map', {
-        "jmap" : docs,
-        // lng : docs[0]['geometry']['coordinates'][0][0][0],
-        // lat : docs[0]['geometry']['coordinates'][0][0][1]
-        lat : 51.49698840879303,
-        lng : -0.14007568359375
-      });
-    });
-  }); 
 
 module.exports = router;
 

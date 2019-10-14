@@ -8,6 +8,7 @@ block content
         button.btn.btn-primary(type='submit')(id='intersectButton') Intersect
 
     script(type='text/javascript').
+        //- styling for feature shapes
         var stylelayer = {
             original: {
                 color: "red",
@@ -37,16 +38,15 @@ block content
         var selectedFeatures = [];
         const maxNumFeaturesToSelect = 2;
 
+        //- create leaflet map
         var map = L.map('map').setView([#{lat},#{lng}], 14);
         L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
         reloadMap();
-        //- clearMap();
-        //- clearMap(function(){reloadMap();});
 
-        // add visible features to map
+        //- adds visible features from database to map (could be reused in the future for reloading map after each union/intersect to match the database)
         function reloadMap() {
             console.log("Reloading map!");
             $.getJSON('/mapjson', {}, function(data){
@@ -55,43 +55,19 @@ block content
                 });
             });
         }
-
-        //- function clearMap() {
-        //-     for(i in map._layers) {
-        //-         if(map._layers[i]._path != undefined) {
-        //-             try {
-        //-                 m.removeLayer(m._layers[i]);
-        //-                 console("removed")
-        //-             }
-        //-             catch(e) {
-        //-                 console.log("problem with " + e + m._layers[i]);
-        //-             }
-        //-         }
-        //-     }
-        //- }
         
-        
-        // adds feature to map (currently only supports Polygons and MultiPolygons)
+        //- adds feature to map (currently only supports Polygons and MultiPolygons)
         function addFeatureToMap(inputFeature) {
-            if (inputFeature.geometry.type == "Polygon")  {
+            if (inputFeature.geometry.type == "Polygon" || inputFeature.geometry.type == "MultiPolygon")  {
                 var feature = L.geoJson(inputFeature.geometry, {
                     style: stylelayer.original,
                     onEachFeature: onEachFeature
                 });
                 feature.addTo(map);
             }
-            else if (inputFeature.geometry.type == "MultiPolygon")  {
-                var feature = L.polygon(inputFeature.geometry, {
-                    style: stylelayer.original,
-                    onEachFeature: onEachFeature
-                });
-                feature.addTo(map, function() {
-                    console.log("successfully added mp " + feature);
-                });
-            }
-            
         }
 
+        //- changes colors for each feature to be highlighted/unhighlighted depending on mouse event
         function onEachFeature(feature, layer) {
             layer.on({
                 mouseover: highlightFeature,
@@ -109,10 +85,10 @@ block content
             var layer = e.target;
             var feature = e.target.feature;
             if (selectedFeatures.includes(feature)) {
-                setStyleLayer(layer, stylelayer.highlight)
+                setStyleLayer(layer, stylelayer.highlight);
             } 
             else {
-                setStyleLayer(layer, stylelayer.original)
+                setStyleLayer(layer, stylelayer.original);
             }
         }
 
@@ -128,15 +104,12 @@ block content
             }
         }
 
+        //- changes styling of this layer
         function setStyleLayer(layer, styleSelected) {
             layer.setStyle(styleSelected);
         }
 
-        function removeSelection(feature, callback) {
-            selectedFeatures = selectedFeatures.filter(obj => obj.geometry.coordinates != feature.geometry.coordinates);
-            callback(arguments[2], arguments[3]);
-        }
-
+        //- adds feature as one of the currently selected features
         function addSelection(feature, callback) {
             if (selectedFeatures.length < maxNumFeaturesToSelect) {
                 selectedFeatures.push(feature);
@@ -147,13 +120,20 @@ block content
             }
         }
 
-        //- union and intersect functionalities
-        document.getElementById("unionButton").onclick = function(){unionPolygons();};
-        document.getElementById("intersectButton").onclick = function(){intersectPolygons();};
+        //- removes feature as one of the currently selected features
+        function removeSelection(feature, callback) {
+            selectedFeatures = selectedFeatures.filter(obj => obj.geometry.coordinates != feature.geometry.coordinates);
+            callback(arguments[2], arguments[3]);
+        }
 
-        function unionPolygons() {
+        //- add union and intersect functionalities
+        document.getElementById("unionButton").onclick = function(){manipulatePolygons(turf.union);};
+        document.getElementById("intersectButton").onclick = function(){manipulatePolygons(turf.intersect);};
+
+        //- performs inputFunc on currently selected polygons and adds the result to the database and map
+        function manipulatePolygons(inputFunc) {
             if (selectedFeatures.length != maxNumFeaturesToSelect) {
-                window.confirm("You must select " + maxNumFeaturesToSelect + " features to perform a union operation");
+                window.confirm("You must select " + maxNumFeaturesToSelect + " features to perform this operation");
             }
 
             else {
@@ -161,52 +141,25 @@ block content
                 var poly2;
                 for (i = 1; i < selectedFeatures.length; i++) {
                     poly2 = selectedFeatures[i];
-                    poly1 = turf.union(poly1, poly2);
+                    poly1 = inputFunc(poly1, poly2);
                 }
-                //- add union polygon to database
+                //- add new union polygon to database
                 addFeatureToDatabase(poly1);
                 addFeatureToMap(poly1);
 
-                //- hide selected polygons from union (but keep them in database)
+                //- hide selected polygons (but keep them in database)
                 selectedFeatures.forEach(function(feature) {
                     hideFeatureInDatabase(feature);
                     //- hideFeatureInMap(feature);
                 });
 
-                //- unselect all selected polygons from union
+                //- unselect all previously selected polygons
                 selectedFeatures = [];
             }
         }
 
-        function intersectPolygons() {
-            if (selectedFeatures.length != maxNumFeaturesToSelect) {
-                window.confirm("You must select " + maxNumFeaturesToSelect + " features to perform a union operation");
-            }
-
-            else {
-                var poly1 = selectedFeatures[0];
-                var poly2;
-                for (i = 1; i < selectedFeatures.length; i++) {
-                    poly2 = selectedFeatures[i];
-                    poly1 = turf.intersect(poly1, poly2);
-                }
-                //- add union polygon to database
-                addFeatureToDatabase(poly1);
-                addFeatureToMap(poly1);
-
-                //- hide selected polygons from union (but keep them in database)
-                selectedFeatures.forEach(function(feature) {
-                    hideFeatureInDatabase(feature);
-                    //- hideFeatureInMap(feature);
-                });
-
-                //- unselect all selected polygons from union
-                selectedFeatures = [];
-            }
-        }
-
+        //- adds a new feature to database via POST request to express
         function addFeatureToDatabase(feature) {
-            //- make POST request to express
             $.ajax({
                 url: '/addFeature', 
                 type: 'POST', 
@@ -215,8 +168,8 @@ block content
             );
         }
 
+        //- hides visibility of a feature in database via POST request to express
         function hideFeatureInDatabase(feature) {
-            //- make POST request to express
             $.ajax({
                 url: '/hideFeature', 
                 type: 'POST', 
@@ -225,7 +178,7 @@ block content
             );
         }
 
-        //- TODO: fix issue with removing layer
+        //- hide visibility of a feature on map via POST request to express; TODO: fix issue with removeLayer()
         //- function hideFeatureInMap(feature) {
         //-     console.log(map);
         //-     if (map.hasLayer(feature)) {
