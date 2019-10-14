@@ -1,10 +1,11 @@
+var fs = require('fs'); 
 var express = require('express');
 var router = express.Router();
 var MongoClient = require('mongodb').MongoClient;
-var url = "mongodb://localhost:27017/polygondb?authSource=admin";
-
-// Mongoose import
 var mongoose = require('mongoose');
+var url = "mongodb://localhost:27017/polygondb?authSource=admin";
+const geoJSONFile = "data/ex1.geojson";
+
 
 // Mongoose connection to MongoDB
 mongoose.connect('mongodb://localhost/polygondb', { useNewUrlParser: true }, function (error) {
@@ -52,8 +53,6 @@ router.post('/addFeature', function (req, res) {
         // add isVisible field for this feature
         feature["isVisible"] = true;
 
-        
-
         // insert feature to collection
         dbo.collection("polygons").insertOne(feature, function(err, res) {
             if (err) throw err;
@@ -66,7 +65,7 @@ router.post('/addFeature', function (req, res) {
 // POST change in visibility for a given feature in database
 router.post('/hideFeature', function (req, res) {
     var featureGeom = req.body.geometry;
-    json.findOneAndUpdate(
+    var f = json.findOneAndUpdate(
         {geometry: featureGeom},
         {isVisible: false},
         function (err, doc) {
@@ -74,8 +73,6 @@ router.post('/hideFeature', function (req, res) {
             console.log("Visibility for feature with geometry " + featureGeom + " successfully set to false");
         }
     )
-
-    json
 });
 
 
@@ -95,3 +92,4 @@ router.get('/map', function(req,res) {
   }); 
 
 module.exports = router;
+

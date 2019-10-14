@@ -41,24 +41,55 @@ block content
         L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
-        
+
+        reloadMap();
+        //- clearMap();
+        //- clearMap(function(){reloadMap();});
+
         // add visible features to map
-        $.getJSON('/mapjson', {}, function(data){
-             $.each(data, function(i, feature) {
-                addFeatureToMap(feature, "feature_" + feature._id); 
-             });
-        });
+        function reloadMap() {
+            console.log("Reloading map!");
+            $.getJSON('/mapjson', {}, function(data){
+                $.each(data, function(i, feature) {
+                    addFeatureToMap(feature); 
+                });
+            });
+        }
+
+        //- function clearMap() {
+        //-     for(i in map._layers) {
+        //-         if(map._layers[i]._path != undefined) {
+        //-             try {
+        //-                 m.removeLayer(m._layers[i]);
+        //-                 console("removed")
+        //-             }
+        //-             catch(e) {
+        //-                 console.log("problem with " + e + m._layers[i]);
+        //-             }
+        //-         }
+        //-     }
+        //- }
         
-        // adds feature to map (currently only supports Polygons)
-        function addFeatureToMap(inputFeature, name) {
-            var feature;
+        
+        // adds feature to map (currently only supports Polygons and MultiPolygons)
+        function addFeatureToMap(inputFeature) {
             if (inputFeature.geometry.type == "Polygon")  {
-                feature = L.geoJson(inputFeature.geometry, {
+                var feature = L.geoJson(inputFeature.geometry, {
                     style: stylelayer.original,
                     onEachFeature: onEachFeature
                 });
+                feature.addTo(map);
             }
-            feature.addTo(map);
+            else if (inputFeature.geometry.type == "MultiPolygon")  {
+                var feature = L.polygon(inputFeature.geometry, {
+                    style: stylelayer.original,
+                    onEachFeature: onEachFeature
+                });
+                feature.addTo(map, function() {
+                    console.log("successfully added mp " + feature);
+                });
+            }
+            
         }
 
         function onEachFeature(feature, layer) {
@@ -118,6 +149,7 @@ block content
 
         //- union and intersect functionalities
         document.getElementById("unionButton").onclick = function(){unionPolygons();};
+        document.getElementById("intersectButton").onclick = function(){intersectPolygons();};
 
         function unionPolygons() {
             if (selectedFeatures.length != maxNumFeaturesToSelect) {
@@ -133,11 +165,40 @@ block content
                 }
                 //- add union polygon to database
                 addFeatureToDatabase(poly1);
+                addFeatureToMap(poly1);
 
-                //- hide original polygons (but keep them in database)
-                //- selectedFeatures.forEach(function(feature) {
-                //-     hideFeatureInDatabase(feature);
-                //- });
+                //- hide selected polygons from union (but keep them in database)
+                selectedFeatures.forEach(function(feature) {
+                    hideFeatureInDatabase(feature);
+                    //- hideFeatureInMap(feature);
+                });
+
+                //- unselect all selected polygons from union
+                selectedFeatures = [];
+            }
+        }
+
+        function intersectPolygons() {
+            if (selectedFeatures.length != maxNumFeaturesToSelect) {
+                window.confirm("You must select " + maxNumFeaturesToSelect + " features to perform a union operation");
+            }
+
+            else {
+                var poly1 = selectedFeatures[0];
+                var poly2;
+                for (i = 1; i < selectedFeatures.length; i++) {
+                    poly2 = selectedFeatures[i];
+                    poly1 = turf.intersect(poly1, poly2);
+                }
+                //- add union polygon to database
+                addFeatureToDatabase(poly1);
+                addFeatureToMap(poly1);
+
+                //- hide selected polygons from union (but keep them in database)
+                selectedFeatures.forEach(function(feature) {
+                    hideFeatureInDatabase(feature);
+                    //- hideFeatureInMap(feature);
+                });
 
                 //- unselect all selected polygons from union
                 selectedFeatures = [];
@@ -163,3 +224,14 @@ block content
                 data: JSON.stringify(feature)}
             );
         }
+
+        //- TODO: fix issue with removing layer
+        //- function hideFeatureInMap(feature) {
+        //-     console.log(map);
+        //-     if (map.hasLayer(feature)) {
+        //-         map.removeLayer(feature, function() {
+        //-             console.log("successfully hid " + feature);
+        //-         });
+        //-     }
+        //- }
+        

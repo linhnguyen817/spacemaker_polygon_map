@@ -19,15 +19,17 @@ a {
   right:10px;
   width:100px;
   padding:10px;
-  background:rgba(34,34,34,1);
-  color:#999;
+  background:rgba(160,160,160,.7);
+  color:#000000;
   font-family: Arial, Helvetica, sans-serif;
   font-size:12px;
+  font-weight: 400;
   line-height:18px;
   border-radius:3px;
   max-height:80%;
   overflow:auto;
   z-index: 999;
+  text-align: center;
 }
 #leg_title {
   top:10px;
