@@ -26,7 +26,7 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-// GET json data of polygons that are visible 
+// GET json data of features that are visible 
 router.get('/mapjson', function (req, res) {
     json.find({isVisible: true}, {}, function (err, docs) {
       if (err) return handleError(err);
@@ -34,6 +34,14 @@ router.get('/mapjson', function (req, res) {
       res.json(docs);
     })
   });
+
+// POST new feature json to database
+router.post('/addFeature', function (req, res) {
+    var newFeature = new json(req.params);
+    newFeature.save(function (err) {
+        if (err) return handleError(err);
+    });
+});
 
 /* GET layers json data. */
 // router.get('/maplayers', function (req, res) {

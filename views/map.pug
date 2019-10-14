@@ -3,11 +3,9 @@ block content
     #map
     #leg_title 
         span#leg_items Controls
-    //- #leg
-    //-     each polygon, i in jmap
-    //-         input(id=polygon._id)(type='checkbox', checked)
-    //-         span#leg_items #{polygon._id}
-    //-         br
+    #leg
+        button.btn.btn-primary(type='submit')(id='unionButton') Union
+        button.btn.btn-primary(type='submit')(id='intersectButton') Intersect
 
     script(type='text/javascript').
         var stylelayer = {
@@ -44,23 +42,23 @@ block content
             attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
         
-        //- add visible polygon layer
+        // add visible features to map
         $.getJSON('/mapjson', {}, function(data){
-             $.each(data, function(i, polygon) {
-                addPolygon(polygon.geometry, "polygon_" + polygon._id); 
-
+             $.each(data, function(i, feature) {
+                addFeatureToMap(feature, "feature_" + feature._id); 
              });
         });
         
-        function addPolygon(inputPolygon, name) {
-            var polygon;
-            if (inputPolygon.type == "Polygon")  {
-                polygon = L.geoJson(inputPolygon, {
+        // adds feature to map (currently only supports Polygons)
+        function addFeatureToMap(inputFeature, name) {
+            var feature;
+            if (inputFeature.geometry.type == "Polygon")  {
+                feature = L.geoJson(inputFeature.geometry, {
                     style: stylelayer.original,
                     onEachFeature: onEachFeature
                 });
             }
-            polygon.addTo(map);
+            feature.addTo(map);
         }
 
         function onEachFeature(feature, layer) {
@@ -72,13 +70,11 @@ block content
         }
 
         function highlightFeature(e) {
-            console.log(selectedFeatures.length);
             var layer = e.target;
             layer.setStyle(stylelayer.highlight);
         }
 
         function resetHighlight(e) {
-            console.log(selectedFeatures.length);
             var layer = e.target;
             var feature = e.target.feature;
             if (selectedFeatures.includes(feature)) {
@@ -90,7 +86,6 @@ block content
         }
 
         function selectFeature(e) {
-            console.log(selectedFeatures);
             var layer = e.target;
             var feature = e.target.feature;
 
@@ -121,41 +116,32 @@ block content
             }
         }
 
-        //- $.getJSON('/maplayers',function(result){
-        //-     $.each(result, function(i, mlayer){
-        //-         $.getJSON('/mapjson/' + mlayer.name, function(data) { addLayer(data, mlayer.name ) });
-        //-     });
-        //- });
+        //- union and intersect functionalities
+        document.getElementById("unionButton").onclick = function(){unionPolygons();};
 
-        //- function addLayer(layer, name) {
-        //-     var leaf_layer;
-        //-     if (layer.type == "MultiPoint") {
-        //-         leaf_layer = L.geoJson(layer, { pointToLayer: function (feature, latlng) {return L.circleMarker(latlng, layer.style); }})
-        //-         leaf_layer.bindPopup(layer.type);
-        //-     } else if (layer.type == "MultiLineString") {
-        //-         leaf_layer = L.geoJson(layer, {style: layer.style });
-        //-         leaf_layer.bindPopup(layer.type);
-        //-     } else  {
-        //-         leaf_layer = L.geoJson(layer, {
-        //-             style: function(feature) {
-        //-                 switch (feature.properties.style) {
-        //-                 case 'Orange': return {color: "#ff0000"};
-        //-                 case 'Blue': return {color: "#0000ff"};
-        //-             }
-        //-             },
-        //-             onEachFeature: function (feature, layer) {
-        //-                  layer.bindPopup(feature.properties.name);
-        //-              }
-        //-          });
-        //-     }
-        //-     leaf_layer.addTo(map);
-            
-        //-     $('#' + name).click(function(e) {
-                
-        //-         if (map.hasLayer(leaf_layer)) {
-        //-             map.removeLayer(leaf_layer);
-        //-         } else {
-        //-             map.addLayer(leaf_layer);
-        //-         }
-        //-     });
-        //- }
+        function unionPolygons() {
+            if (selectedFeatures.length != maxNumFeaturesToSelect) {
+                window.confirm("You must select " + maxNumFeaturesToSelect + " features to perform a union operation");
+            }
+
+            else {
+                var poly1 = selectedFeatures[0];
+                var poly2;
+                for (i = 1; i < selectedFeatures.length; i++) {
+                    poly2 = selectedFeatures[i];
+                    poly1 = turf.union(poly1, poly2);
+                }
+                addFeatureToDatabase(poly1);
+                //- addFeatureToMap(poly1.geometry, "unioned");
+            }
+        }
+
+        function addFeatureToDatabase(feature) {
+            // make POST request to express
+            $.ajax({
+                url: '/addFeature', 
+                type: 'POST', 
+                contentType: 'application/json', 
+                data: JSON.stringify(feature)}
+            );
+        }
