@@ -3,11 +3,11 @@ block content
     #map
     #leg_title 
         span#leg_items Controls
-    #leg
-        each polygon, i in jmap
-            input(id=polygon._id)(type='checkbox', checked)
-            span#leg_items #{polygon._id}
-            br
+    //- #leg
+    //-     each polygon, i in jmap
+    //-         input(id=polygon._id)(type='checkbox', checked)
+    //-         span#leg_items #{polygon._id}
+    //-         br
 
     script(type='text/javascript').
         var stylelayer = {
@@ -36,7 +36,8 @@ block content
             }
         };
 
-        var featuresSelected = [];
+        var selectedFeatures = [];
+        const maxNumFeaturesToSelect = 2;
 
         var map = L.map('map').setView([#{lat},#{lng}], 14);
         L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
@@ -45,7 +46,6 @@ block content
         
         //- add visible polygon layer
         $.getJSON('/mapjson', {}, function(data){
-                console.log(data);
              $.each(data, function(i, polygon) {
                 addPolygon(polygon.geometry, "polygon_" + polygon._id); 
 
@@ -57,7 +57,7 @@ block content
             if (inputPolygon.type == "Polygon")  {
                 polygon = L.geoJson(inputPolygon, {
                     style: stylelayer.original,
-                    onEachFeature: onEachFeature //- add area highlight feature with mouse hover
+                    onEachFeature: onEachFeature
                 });
             }
             polygon.addTo(map);
@@ -66,21 +66,22 @@ block content
         function onEachFeature(feature, layer) {
             layer.on({
                 mouseover: highlightFeature,
-                mouseout: resetHighlight
-                click : selectFeature
+                mouseout: resetHighlight,
+                click: selectFeature
             });
         }
 
         function highlightFeature(e) {
+            console.log(selectedFeatures.length);
             var layer = e.target;
             layer.setStyle(stylelayer.highlight);
         }
 
-
         function resetHighlight(e) {
+            console.log(selectedFeatures.length);
             var layer = e.target;
             var feature = e.target.feature;
-            if (checkExistsLayers(feature)) {
+            if (selectedFeatures.includes(feature)) {
                 setStyleLayer(layer, stylelayer.highlight)
             } 
             else {
@@ -88,19 +89,36 @@ block content
             }
         }
 
-        function checkExistsLayers(feature) {
-            var result = false
-            for (var i = 0; i < featuresSelected.length; i++) {
-                if (featuresSelected[i]._id == feature._id) {
-                    result = true;
-                    break;
-                }
-            };
-            return result
+        function selectFeature(e) {
+            console.log(selectedFeatures);
+            var layer = e.target;
+            var feature = e.target.feature;
+
+            if (selectedFeatures.includes(feature)) {
+                removeSelection(feature, setStyleLayer, layer, stylelayer.original);
+
+            } else {
+                addSelection(feature, setStyleLayer, layer, stylelayer.highlight);
+            }
         }
 
         function setStyleLayer(layer, styleSelected) {
-            layer.setStyle(styleSelected)
+            layer.setStyle(styleSelected);
+        }
+
+        function removeSelection(feature, callback) {
+            selectedFeatures = selectedFeatures.filter(obj => obj.geometry.coordinates != feature.geometry.coordinates);
+            callback(arguments[2], arguments[3]);
+        }
+
+        function addSelection(feature, callback) {
+            if (selectedFeatures.length < maxNumFeaturesToSelect) {
+                selectedFeatures.push(feature);
+                callback(arguments[2], arguments[3]);
+            }
+            else {
+                window.confirm("You can only select " + maxNumFeaturesToSelect + " features at a time.");
+            }
         }
 
         //- $.getJSON('/maplayers',function(result){
