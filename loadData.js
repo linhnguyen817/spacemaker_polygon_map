@@ -3,7 +3,7 @@ var MongoClient = require('mongodb').MongoClient;
 var GJV = require("geojson-validation");
 var url = "mongodb://localhost:27017/polygondb?authSource=admin";
 const geoJSONFile = process.argv.slice(2).toString();
-console.log(geoJSONFile);
+
 // load GeoJSON input data
 var data;
 try {
@@ -39,7 +39,7 @@ MongoClient.connect(url, function(err, db) {
         // insert polygons to polygons collection
         dbo.collection("polygons").insertMany(data.features, function(err, res) {
             if (err) throw err;
-            console.log("No. of GeoJSON objects inserted to database: " + data.features.length);
+            console.log("# of GeoJSON objects inserted to database: " + data.features.length);
             db.close();
         });
     });

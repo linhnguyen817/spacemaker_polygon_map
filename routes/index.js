@@ -56,7 +56,6 @@ router.get('/mapjson', function (req, res) {
 // POST new feature to database
 router.post('/addFeature', function (req, res) {
     var feature = new json(req.body);
-    console.log(req.body);
 
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
@@ -69,7 +68,7 @@ router.post('/addFeature', function (req, res) {
         // insert feature to collection
         dbo.collection("polygons").insertOne(feature, function(err, res) {
             if (err) throw err;
-            console.log("Feature successfully added");
+            console.log("Feature successfully added to database");
             db.close();
         });
     });
@@ -83,7 +82,7 @@ router.post('/hideFeature', function (req, res) {
         {isVisible: false},
         function (err, doc) {
             if (err) return handleError(err);
-            console.log("Visibility for feature with geometry " + featureGeom + " successfully set to false");
+            console.log("Visibility of feature successfully updated in database");
         }
     )
 });
