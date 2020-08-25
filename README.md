@@ -23,7 +23,7 @@ A Leaflet map with Node.js and MongoDB with polygon union and intersection opera
 
 
 
-**Things I would have done if given more time:**  
+**Future improvements:**  
 - Use a dynamic starting center point for map
 - Removing map layer artifacts (i.e. the original boundary lines) after a union or intersection operation (I unsuccessfully attempted in the given time, so it is currently commented out)
 - Resetting the database back to the original GeoJSON data file at every reload (currently, the original and user-created polygons persist in the database for following sessions)
